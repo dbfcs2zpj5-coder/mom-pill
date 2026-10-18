@@ -10,7 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="食藥未">
     <meta name="theme-color" content="#f8fafc" id="theme-color-meta">
 
-    <!-- 確保 iOS 能抓到桌面 Icon -->
+    <!-- PWA Manifest 與桌面 Icon -->
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" href="icon-192.png">
 
@@ -36,12 +37,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
     <script>
-        // 預先處理深色模式以防閃爍
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        // 預先處理深色模式以防閃爍 (加入 try/catch 防範隱私模式或沙盒限制)
+        (function initThemeEarly() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {
+                console.warn('無法讀取主題偏好設定:', e);
+            }
+        })();
     </script>
 
     <style>
@@ -78,7 +87,7 @@
                     <h2 class="text-4xl font-black text-blue-600 dark:text-blue-400 mt-1">今日打卡</h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleTheme()" class="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-2xl">
+                    <button onclick="toggleTheme()" aria-label="切換深淺色主題" class="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-2xl">
                         <i class="fa-solid fa-moon" id="theme-icon"></i>
                     </button>
                 </div>
@@ -104,8 +113,8 @@
                         <i class="fa-solid fa-file-lines mr-2"></i>所有備註
                     </button>
                     <!-- 月曆翻頁按鈕 -->
-                    <button id="cal-prev-btn" onclick="changeCalendarMonth(-1)" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-xl"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button id="cal-next-btn" onclick="changeCalendarMonth(1)" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-xl hidden"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button id="cal-prev-btn" onclick="changeCalendarMonth(-1)" aria-label="上一個月" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-xl"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button id="cal-next-btn" onclick="changeCalendarMonth(1)" aria-label="下一個月" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 active:scale-95 transition-transform text-xl hidden"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
             <p class="text-xl text-slate-500 dark:text-slate-400 font-bold mb-4 shrink-0" id="calendar-month-year">載入中...</p>
@@ -123,7 +132,7 @@
                     <!-- 月曆內容將由 JS 生成 -->
                 </div>
                 <div class="mt-6 text-center space-y-2 shrink-0">
-                    <p class="text-base text-slate-500 dark:text-slate-400 font-bold">💡 點擊有顏色的日子，可修改打卡紀錄</p>
+                    <p class="text-base text-slate-500 dark:text-slate-400 font-bold">💡 點擊過去或今日的日子，可查看或修改打卡與備註</p>
                     <p class="text-sm text-slate-400 font-bold"><i class="fa-solid fa-comment-dots text-blue-400 mr-1"></i>有此標記代表當日有備註</p>
                     <p class="text-sm text-slate-500 dark:text-slate-500 font-bold mt-4">💡 為確保設備順暢，系統僅自動保留最近 60 天的紀錄</p>
                 </div>
@@ -133,7 +142,7 @@
         <div id="view-manage" class="hidden flex-1 flex flex-col p-4 relative h-full min-h-0">
             <div class="mb-5 mt-2 flex justify-between items-center shrink-0">
                 <h2 class="text-4xl font-black text-blue-600 dark:text-blue-400">藥物清單</h2>
-                <button onclick="openAddModal()" class="bg-blue-600 dark:bg-blue-500 text-white w-16 h-16 rounded-full shadow-lg shadow-blue-200 dark:shadow-none flex items-center justify-center text-3xl active:bg-blue-700 dark:active:bg-blue-600 transition-transform active:scale-95">
+                <button onclick="openAddModal()" aria-label="新增藥物" class="bg-blue-600 dark:bg-blue-500 text-white w-16 h-16 rounded-full shadow-lg shadow-blue-200 dark:shadow-none flex items-center justify-center text-3xl active:bg-blue-700 dark:active:bg-blue-600 transition-transform active:scale-95">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
@@ -184,7 +193,7 @@
             <div class="w-16 h-2 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-6 shrink-0"></div>
             <div class="flex justify-between items-center mb-6 shrink-0">
                 <h3 class="text-3xl font-black text-slate-800 dark:text-slate-200">📝 所有備註</h3>
-                <button onclick="closeAllNotesModal()" class="w-14 h-14 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-2xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeAllNotesModal()" aria-label="關閉所有備註" class="w-14 h-14 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-2xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="all-notes-content" class="flex-1 overflow-y-auto min-h-0 no-scrollbar pb-10 space-y-4 overscroll-contain">
                 <!-- 備註列表由 JS 生成 -->
@@ -249,7 +258,7 @@
             <div class="w-16 h-2 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-6 shrink-0"></div>
             <div class="flex justify-between items-center mb-6 shrink-0">
                 <h3 class="text-3xl font-black text-slate-800 dark:text-slate-200"><i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>注意事項</h3>
-                <button onclick="closeMedInfo()" class="w-12 h-12 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeMedInfo()" aria-label="關閉注意事項" class="w-12 h-12 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto min-h-0 no-scrollbar pb-6 overscroll-contain">
                 <p id="info-med-name" class="text-xl font-bold text-slate-500 dark:text-slate-400 mb-4"></p>
@@ -266,7 +275,7 @@
             <div class="w-16 h-2 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-6 shrink-0"></div>
             <div class="flex justify-between items-center mb-6 shrink-0">
                 <h3 class="text-3xl font-black text-slate-800 dark:text-slate-200" id="history-detail-title">紀錄詳情</h3>
-                <button onclick="closeHistoryDetail()" class="w-14 h-14 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-2xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeHistoryDetail()" aria-label="關閉紀錄詳情" class="w-14 h-14 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full flex items-center justify-center text-2xl active:scale-95 transition-transform"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="flex-1 overflow-y-auto min-h-0 no-scrollbar pb-10 space-y-2 overscroll-contain">
@@ -297,7 +306,7 @@
     <!-- ================= 圖片畫廊檢視器 (層級 z-[80]) ================= -->
     <div id="modal-image-viewer" class="fixed inset-0 bg-slate-900/95 dark:bg-black/95 z-[80] hidden flex-col backdrop-blur-xl">
         <div class="flex justify-end p-6 pt-safe shrink-0">
-            <button onclick="closeImageViewer()" class="w-14 h-14 bg-slate-800 border-2 border-slate-600 rounded-full text-white flex items-center justify-center text-3xl shadow-2xl active:scale-95 transition-transform z-10">
+            <button onclick="closeImageViewer()" aria-label="關閉圖片檢視器" class="w-14 h-14 bg-slate-800 border-2 border-slate-600 rounded-full text-white flex items-center justify-center text-3xl shadow-2xl active:scale-95 transition-transform z-10">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -306,7 +315,7 @@
     </div>
 
     <!-- ================= Toast 提示 (層級 z-[90]) ================= -->
-    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-800 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-[90] font-black text-xl flex items-center gap-3 w-max max-w-[90%] border border-slate-700 dark:border-slate-300">
+    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 -translate-y-4 bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-800 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-[90] font-black text-xl flex items-center gap-3 w-max max-w-[90%] border border-slate-700 dark:border-slate-300">
         <span id="toast-icon" class="text-3xl"></span>
         <span id="toast-message"></span>
     </div>
@@ -318,15 +327,32 @@
         let dailyNotes = {}; 
         let currentEditingImages = []; 
         let confirmActionCallback = null; 
+        let toastTimeout = null;
+        let noteSaveTimer = null;
         
         // 全局月曆顯示月份 (預設為本月)
         let displayCalYear = new Date().getFullYear();
         let displayCalMonth = new Date().getMonth();
 
-        // ====== 輔助功能 ======
+        // ====== 安全與輔助功能 ======
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function getSortedMedications() {
+            return [...medications].sort((a, b) => (a.time || '23:59').localeCompare(b.time || '23:59'));
+        }
+
         function updateThemeIcon() {
             const icon = document.getElementById('theme-icon');
             const metaTheme = document.getElementById('theme-color-meta');
+            if (!icon || !metaTheme) return;
             if (document.documentElement.classList.contains('dark')) {
                 icon.className = "fa-solid fa-sun text-yellow-500";
                 metaTheme.setAttribute('content', '#0f172a'); 
@@ -338,12 +364,11 @@
 
         function toggleTheme() {
             const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
+            const isDark = html.classList.toggle('dark');
+            try {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            } catch (e) {
+                console.warn('無法儲存主題設定:', e);
             }
             updateThemeIcon();
             if (navigator.vibrate) navigator.vibrate(50);
@@ -351,29 +376,30 @@
 
         function getTodayString() {
             const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
         function getDisplayDate() {
             const d = new Date();
             const days = ['日', '一', '二', '三', '四', '五', '六'];
-            return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${days[d.getDay()]}`;
+            return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${days[d.getDay()]}`;
         }
 
         // ================= 初始化網絡狀態偵測與更新提示 =================
         function initNetworkStatus() {
             const statusBar = document.getElementById('app-status-bar');
-            if(!statusBar) return;
+            if (!statusBar) return;
             
             statusBar.classList.remove('hidden');
+            let hasPendingUpdate = false;
             
             function updateStatus() {
+                if (hasPendingUpdate && navigator.onLine) return;
                 if (!navigator.onLine) {
                     statusBar.innerHTML = '✈️ 離線模式 (目前使用本地版本)';
                     statusBar.className = 'mb-4 p-2 text-slate-400 dark:text-slate-500 text-center font-bold text-sm transition-colors cursor-default shrink-0';
                     statusBar.onclick = null;
                 } else {
-                    // 線上模式，但未發現更新，設定為極其低調的灰色
                     statusBar.innerHTML = '系統已是最新版本';
                     statusBar.className = 'mb-4 p-2 text-slate-400 dark:text-slate-600 text-center font-bold text-sm transition-colors cursor-default shrink-0';
                     statusBar.onclick = null;
@@ -385,35 +411,42 @@
             updateStatus(); 
 
             // 註冊 Service Worker 並監聽更新
-            if ('serviceWorker' in navigator) {
+            if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
                     reg.onupdatefound = () => {
                         const installingWorker = reg.installing;
+                        if (!installingWorker) return;
                         installingWorker.onstatechange = () => {
                             if (installingWorker.state === 'installed' && navigator.serviceWorker.controller && navigator.onLine) {
-                                // 只有發現更新時，才變成高亮藍色按鈕
+                                hasPendingUpdate = true;
                                 statusBar.innerHTML = '🔄 發現新版本！點擊這裡更新';
                                 statusBar.className = 'mb-4 p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-xl text-center font-black text-base cursor-pointer active:scale-95 shadow-sm transition-all border-2 border-blue-200 dark:border-blue-700 shrink-0';
                                 statusBar.onclick = () => { window.location.reload(); };
                             }
                         };
                     };
-                }).catch(err => console.log('SW註冊失敗:', err));
+                }).catch(err => console.log('SW註冊略過或失敗:', err));
             }
         }
 
         // ====== 啟動與核心載入 ======
         async function initApp() {
             updateThemeIcon();
-            const storedMeds = await localforage.getItem('mom_medications');
-            const storedLogs = await localforage.getItem('mom_dailyLogs');
-            const storedNotes = await localforage.getItem('mom_dailyNotes');
-            
-            if (storedMeds) medications = storedMeds;
-            if (storedLogs) dailyLogs = storedLogs;
-            if (storedNotes) dailyNotes = storedNotes;
+            try {
+                const [storedMeds, storedLogs, storedNotes] = await Promise.all([
+                    localforage.getItem('mom_medications'),
+                    localforage.getItem('mom_dailyLogs'),
+                    localforage.getItem('mom_dailyNotes')
+                ]);
+                
+                if (Array.isArray(storedMeds)) medications = storedMeds;
+                if (storedLogs && typeof storedLogs === 'object') dailyLogs = storedLogs;
+                if (storedNotes && typeof storedNotes === 'object') dailyNotes = storedNotes;
+            } catch (err) {
+                console.warn('讀取本地儲存資料失敗:', err);
+            }
 
-            // 啟動時自動清理超過 60 天的舊紀錄
+            // 啟動時自動清理超過 60 天的舊紀錄與空紀錄
             await purgeOldRecords();
 
             renderTodayView();
@@ -424,41 +457,64 @@
             initNetworkStatus();
         }
 
-        // 自動清理 60 天舊紀錄函數 (已修復時區 Bug)
+        // 自動清理超過 60 天舊紀錄與無效空紀錄 (使用本地時區午夜基準)
         async function purgeOldRecords() {
             const todayDate = new Date();
-            todayDate.setHours(0,0,0,0);
+            todayDate.setHours(0, 0, 0, 0);
+            const activeMedIds = new Set(medications.map(m => m.id));
             let hasChanges = false;
             
-            const checkAndPurge = (dataObj) => {
-                for (const dateStr in dataObj) {
-                    const [y, m, d] = dateStr.split('-');
-                    // 強制使用本地時區解析，避免 UTC 造成 8 小時誤差
-                    const logDate = new Date(y, m - 1, d); 
-                    const diffTime = todayDate - logDate;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    if (diffDays > 60) {
-                        delete dataObj[dateStr];
+            const isExpiredDate = (dateStr) => {
+                const parts = dateStr.split('-').map(Number);
+                if (parts.length !== 3 || parts.some(isNaN)) return true;
+                const logDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                logDate.setHours(0, 0, 0, 0);
+                const diffDays = Math.floor((todayDate - logDate) / (1000 * 60 * 60 * 24));
+                return diffDays > 60;
+            };
+
+            for (const dateStr of Object.keys(dailyLogs)) {
+                if (isExpiredDate(dateStr) || !dailyLogs[dateStr] || typeof dailyLogs[dateStr] !== 'object') {
+                    delete dailyLogs[dateStr];
+                    hasChanges = true;
+                    continue;
+                }
+                // 清理已被刪除藥物的殘留打卡或 false 值
+                for (const medId of Object.keys(dailyLogs[dateStr])) {
+                    if (!dailyLogs[dateStr][medId] || (medications.length > 0 && !activeMedIds.has(medId))) {
+                        delete dailyLogs[dateStr][medId];
                         hasChanges = true;
                     }
                 }
-            };
+                if (Object.keys(dailyLogs[dateStr]).length === 0) {
+                    delete dailyLogs[dateStr];
+                    hasChanges = true;
+                }
+            }
 
-            checkAndPurge(dailyLogs);
-            checkAndPurge(dailyNotes);
+            for (const dateStr of Object.keys(dailyNotes)) {
+                if (isExpiredDate(dateStr) || typeof dailyNotes[dateStr] !== 'string' || !dailyNotes[dateStr].trim()) {
+                    delete dailyNotes[dateStr];
+                    hasChanges = true;
+                }
+            }
 
             if (hasChanges) {
                 await saveData();
-                console.log("60天舊紀錄已自動清理");
             }
         }
 
         // 自動偵測過夜換日刷新
-        document.addEventListener("visibilitychange", () => {
+        document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible") {
                 const today = getTodayString();
-                const renderedDate = document.getElementById('today-date-text').dataset.currentDate;
+                const dateEl = document.getElementById('today-date-text');
+                const renderedDate = dateEl ? dateEl.dataset.currentDate : null;
                 if (renderedDate && renderedDate !== today) {
+                    const now = new Date();
+                    displayCalYear = now.getFullYear();
+                    displayCalMonth = now.getMonth();
+                    await purgeOldRecords();
                     renderTodayView();
                     renderHistoryView();
                 }
@@ -466,33 +522,55 @@
         });
 
         async function saveData() {
-            await localforage.setItem('mom_medications', medications);
-            await localforage.setItem('mom_dailyLogs', dailyLogs);
-            await localforage.setItem('mom_dailyNotes', dailyNotes);
+            try {
+                await Promise.all([
+                    localforage.setItem('mom_medications', medications),
+                    localforage.setItem('mom_dailyLogs', dailyLogs),
+                    localforage.setItem('mom_dailyNotes', dailyNotes)
+                ]);
+            } catch (err) {
+                console.warn('儲存資料至本地空間失敗:', err);
+            }
         }
 
-        // 儲存備註 (防止資料流失)
+        // 儲存備註 (具備防重複寫入與即時同步)
         async function saveNote(dateStr, content) {
-            if (!content.trim()) {
+            const trimmed = (content || '').trim();
+            const existing = dailyNotes[dateStr] || '';
+            if (trimmed === existing) return;
+
+            if (!trimmed) {
                 delete dailyNotes[dateStr];
             } else {
-                dailyNotes[dateStr] = content.trim();
+                dailyNotes[dateStr] = trimmed;
             }
             await saveData();
             
             // 如果是今天，同步更新首頁輸入框
             if (dateStr === getTodayString()) {
                 const todayInput = document.getElementById('today-note-input');
-                if (todayInput && todayInput.value !== content) todayInput.value = content;
+                if (todayInput && todayInput !== document.activeElement && todayInput.value !== trimmed) {
+                    todayInput.value = trimmed;
+                }
             }
             renderHistoryView(); 
+        }
+
+        function scheduleNoteSave(dateStr, content) {
+            if (noteSaveTimer) clearTimeout(noteSaveTimer);
+            noteSaveTimer = setTimeout(() => {
+                saveNote(dateStr, content);
+            }, 400);
         }
 
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
             const toastIcon = document.getElementById('toast-icon');
+            if (!toast || !toastMsg || !toastIcon) return;
             
+            if (toastTimeout) clearTimeout(toastTimeout);
+
             toastMsg.innerText = message;
             if (type === 'success') toastIcon.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
             if (type === 'error') toastIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-red-500"></i>';
@@ -500,7 +578,7 @@
             toast.classList.remove('opacity-0', '-translate-y-4');
             toast.classList.add('opacity-100', 'translate-y-0');
             
-            setTimeout(() => {
+            toastTimeout = setTimeout(() => {
                 toast.classList.remove('opacity-100', 'translate-y-0');
                 toast.classList.add('opacity-0', '-translate-y-4');
             }, 3000);
@@ -528,27 +606,34 @@
             container.innerHTML = '';
             
             const today = getTodayString();
-            document.getElementById('today-date-text').innerText = getDisplayDate();
-            document.getElementById('today-date-text').dataset.currentDate = today; 
+            const dateTextEl = document.getElementById('today-date-text');
+            dateTextEl.innerText = getDisplayDate();
+            dateTextEl.dataset.currentDate = today; 
             
-            if (!dailyLogs[today]) dailyLogs[today] = {};
-
+            const todayLog = dailyLogs[today] || {};
             let completedCount = 0;
 
-            // 空載時加入 min-h-[60vh] 撐開版面確保可捲動，顏色更柔和
             if (medications.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-[50vh] text-blue-300 dark:text-slate-600">
-                        <i class="fa-solid fa-box-open text-7xl mb-6 opacity-50"></i>
-                        <p class="font-black text-2xl text-center text-blue-400 dark:text-slate-500">尚未新增任何藥物</p>
-                    </div>`;
+                const emptyState = document.createElement('div');
+                emptyState.className = "flex flex-col items-center justify-center min-h-[50vh] text-blue-300 dark:text-slate-600";
+                emptyState.innerHTML = `
+                    <i class="fa-solid fa-box-open text-7xl mb-6 opacity-50"></i>
+                    <p class="font-black text-2xl text-center text-blue-400 dark:text-slate-500">尚未新增任何藥物</p>
+                `;
+                container.appendChild(emptyState);
                 updateProgress(0, 0);
             } else {
-                const sortedMeds = [...medications].sort((a, b) => (a.time || '23:59').localeCompare(b.time || '23:59'));
+                const sortedMeds = getSortedMedications();
 
                 sortedMeds.forEach(med => {
-                    const isChecked = dailyLogs[today][med.id] || false;
+                    const isChecked = todayLog[med.id] === true;
                     if (isChecked) completedCount++;
+
+                    const safeId = escapeHtml(med.id);
+                    const safeName = escapeHtml(med.name);
+                    const safeDosage = escapeHtml(med.dosage);
+                    const safePurpose = escapeHtml(med.purpose);
+                    const safeTime = escapeHtml(med.time);
 
                     const thumbnail = (med.images && med.images.length > 0) ? med.images[0] : null;
                     const photoCount = (med.images && med.images.length > 1) ? `<div class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-xs md:text-sm font-bold px-2 py-1 rounded-full shadow-sm backdrop-blur-sm">+${med.images.length - 1}</div>` : '';
@@ -558,33 +643,29 @@
                     const btnStyle = isChecked ? 'bg-green-500 dark:bg-green-600 text-white shadow-lg scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-500 border-2 border-slate-200 dark:border-slate-600';
 
                     const imgHtml = thumbnail 
-                        ? `<div class="w-28 h-28 md:w-32 md:h-32 flex-shrink-0 relative overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm" onclick="openImageViewer('${med.id}')">
-                            <img src="${thumbnail}" class="w-full h-full object-contain p-1.5">
+                        ? `<div class="w-28 h-28 md:w-32 md:h-32 flex-shrink-0 relative overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm cursor-pointer" onclick="openImageViewer('${safeId}')">
+                            <img src="${thumbnail}" alt="${safeName}" class="w-full h-full object-contain p-1.5">
                             ${photoCount}
                            </div>`
                         : `<div class="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-2 border-slate-200 dark:border-slate-700 flex-shrink-0 flex items-center justify-center text-slate-300 dark:text-slate-600 bg-slate-50 dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-pills text-5xl"></i></div>`;
 
-                    const timeTag = med.time ? `<span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-block mb-1.5"><i class="fa-regular fa-clock mr-1"></i>${med.time}</span>` : '';
-                    
-                    // 統一採用灰色字體，保持極簡
-                    const dosageTag = med.dosage ? `<p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-bold mb-1.5 truncate"><i class="fa-solid fa-prescription-bottle-medical mr-1.5"></i>${med.dosage}</p>` : '';
-                    const purposeTag = med.purpose ? `<p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-bold truncate mb-1"><i class="fa-solid fa-heart-pulse text-red-400 mr-1.5"></i>${med.purpose}</p>` : '';
-                    
-                    // 智能收納的「注意事項」按鈕
-                    const infoBtn = med.sideEffects ? `<button onclick="event.stopPropagation(); showMedInfo('${med.id}')" class="mt-1 text-sm bg-blue-50 dark:bg-slate-700 border border-blue-200 dark:border-slate-600 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg font-bold active:scale-95 transition-transform"><i class="fa-solid fa-circle-info mr-1"></i>注意事項</button>` : '';
+                    const timeTag = safeTime ? `<span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-block mb-1.5"><i class="fa-regular fa-clock mr-1"></i>${safeTime}</span>` : '';
+                    const dosageTag = safeDosage ? `<p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-bold mb-1.5 truncate"><i class="fa-solid fa-prescription-bottle-medical mr-1.5"></i>${safeDosage}</p>` : '';
+                    const purposeTag = safePurpose ? `<p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-bold truncate mb-1"><i class="fa-solid fa-heart-pulse text-red-400 mr-1.5"></i>${safePurpose}</p>` : '';
+                    const infoBtn = med.sideEffects ? `<button onclick="event.stopPropagation(); showMedInfo('${safeId}')" class="mt-1 text-sm bg-blue-50 dark:bg-slate-700 border border-blue-200 dark:border-slate-600 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg font-bold active:scale-95 transition-transform"><i class="fa-solid fa-circle-info mr-1"></i>注意事項</button>` : '';
 
                     const card = document.createElement('div');
                     card.className = `${cardBg} rounded-[2rem] shadow-sm border-2 transition-all duration-300 p-3 mb-4 flex items-center gap-4`;
                     card.innerHTML = `
                         ${imgHtml}
-                        <div class="flex-1 min-w-0 py-1 cursor-pointer" onclick="toggleMedication('${med.id}', ${isChecked}, '${today}')">
+                        <div class="flex-1 min-w-0 py-1 cursor-pointer" onclick="toggleMedication('${safeId}', ${isChecked}, '${today}')">
                             ${timeTag}
-                            <h3 class="font-black text-2xl md:text-3xl ${textStyle} leading-tight truncate mb-1.5">${med.name}</h3>
+                            <h3 class="font-black text-2xl md:text-3xl ${textStyle} leading-tight truncate mb-1.5">${safeName}</h3>
                             ${dosageTag}
                             ${purposeTag}
                             ${infoBtn}
                         </div>
-                        <button onclick="toggleMedication('${med.id}', ${isChecked}, '${today}')" class="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${btnStyle} mx-1">
+                        <button onclick="toggleMedication('${safeId}', ${isChecked}, '${today}')" aria-label="打卡 ${safeName}" class="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${btnStyle} mx-1">
                             <i class="fa-solid fa-check text-5xl md:text-6xl"></i>
                         </button>
                     `;
@@ -593,14 +674,21 @@
                 updateProgress(completedCount, medications.length);
             }
 
-            // 確保「今日備註」必定被印出來
-            const noteValue = dailyNotes[today] || '';
-            container.innerHTML += `
-                <div class="mt-8 bg-blue-50 dark:bg-slate-900 p-5 rounded-3xl border-2 border-blue-100 dark:border-slate-800 shrink-0 mb-4">
-                    <label class="block text-xl font-black text-slate-700 dark:text-slate-300 mb-3"><i class="fa-solid fa-pen mr-2"></i>今日備註</label>
-                    <textarea id="today-note-input" onchange="saveNote('${today}', this.value)" onblur="saveNote('${today}', this.value)" placeholder="有咩唔舒服？例如：頭暈、無胃口" rows="2" class="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 font-bold text-xl transition-colors placeholder-slate-400 dark:placeholder-slate-600">${noteValue}</textarea>
-                </div>
+            // 使用 DOM 節點附加「今日備註」，避免 innerHTML += 重繪整個列表
+            const noteWrapper = document.createElement('div');
+            noteWrapper.className = "mt-8 bg-blue-50 dark:bg-slate-900 p-5 rounded-3xl border-2 border-blue-100 dark:border-slate-800 shrink-0 mb-4";
+            noteWrapper.innerHTML = `
+                <label for="today-note-input" class="block text-xl font-black text-slate-700 dark:text-slate-300 mb-3"><i class="fa-solid fa-pen mr-2"></i>今日備註</label>
+                <textarea id="today-note-input" placeholder="有咩唔舒服？例如：頭暈、無胃口" rows="2" class="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 font-bold text-xl transition-colors placeholder-slate-400 dark:placeholder-slate-600"></textarea>
             `;
+            container.appendChild(noteWrapper);
+
+            const todayNoteInput = document.getElementById('today-note-input');
+            if (todayNoteInput) {
+                todayNoteInput.value = dailyNotes[today] || '';
+                todayNoteInput.oninput = (e) => scheduleNoteSave(today, e.target.value);
+                todayNoteInput.onblur = (e) => saveNote(today, e.target.value);
+            }
         }
 
         // ================= 智能收納：注意事項彈出視窗 =================
@@ -630,18 +718,22 @@
                 nextBtn.classList.remove('hidden');
             }
 
-            // 尋找最舊的紀錄，避免用戶無限翻向過去
+            // 尋找最舊的有效紀錄，避免用戶無限翻向過去
             const prevBtn = document.getElementById('cal-prev-btn');
             const todayStr = getTodayString();
             let oldestDateStr = todayStr;
-            const allSavedDates = [...Object.keys(dailyLogs), ...Object.keys(dailyNotes)].sort();
+            const validLogDates = Object.keys(dailyLogs).filter(d => {
+                const log = dailyLogs[d];
+                return log && Object.values(log).some(Boolean);
+            });
+            const validNoteDates = Object.keys(dailyNotes).filter(d => dailyNotes[d] && dailyNotes[d].trim());
+            const allSavedDates = [...validLogDates, ...validNoteDates].sort();
             
-            if (allSavedDates.length > 0) {
+            if (allSavedDates.length > 0 && allSavedDates[0] < oldestDateStr) {
                 oldestDateStr = allSavedDates[0];
             }
             
-            const [oldY, oldM, ] = oldestDateStr.split('-').map(Number);
-            // JavaScript 月份是 0-11，所以 oldM - 1
+            const [oldY, oldM] = oldestDateStr.split('-').map(Number);
             if (displayCalYear < oldY || (displayCalYear === oldY && displayCalMonth <= oldM - 1)) {
                 prevBtn.classList.add('hidden');
             } else {
@@ -667,7 +759,6 @@
             const todayStr = getTodayString();
 
             monthYearText.innerText = `${displayCalYear}年 ${displayCalMonth + 1}月`;
-            container.innerHTML = '';
             
             // 每次渲染更新按鈕隱藏邏輯
             updateCalendarButtons();
@@ -676,34 +767,36 @@
             const daysInMonth = new Date(displayCalYear, displayCalMonth + 1, 0).getDate();
             const totalMeds = medications.length;
 
+            let html = '';
             const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
             daysOfWeek.forEach(d => {
-                container.innerHTML += `<div class="text-center text-sm md:text-base font-black text-slate-400 dark:text-slate-500 mb-2">${d}</div>`;
+                html += `<div class="text-center text-sm md:text-base font-black text-slate-400 dark:text-slate-500 mb-2">${d}</div>`;
             });
 
             for (let i = 0; i < firstDay; i++) {
-                container.innerHTML += `<div></div>`;
+                html += `<div></div>`;
             }
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = `${displayCalYear}-${String(displayCalMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const log = dailyLogs[dateStr] || {};
-                const takenCount = Object.values(log).filter(v => v).length;
+                // 僅統計目前有效藥物的打卡數量，避免已刪除藥物干擾統計
+                const takenCount = medications.filter(m => log[m.id] === true).length;
 
                 let bgClass = "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600";
                 const isPastOrToday = (dateStr <= todayStr);
+                const hasNote = Boolean(dailyNotes[dateStr] && dailyNotes[dateStr].trim());
                 
                 let clickAction = '';
                 let cursorClass = '';
                 
-                // 備註小氣泡標示
-                const noteIcon = dailyNotes[dateStr] ? `<div class="absolute -top-1 -right-1 text-blue-500 dark:text-blue-400 text-xs md:text-sm drop-shadow-sm"><i class="fa-solid fa-comment-dots"></i></div>` : '';
+                const noteIcon = hasNote ? `<div class="absolute -top-1 -right-1 text-blue-500 dark:text-blue-400 text-xs md:text-sm drop-shadow-sm"><i class="fa-solid fa-comment-dots"></i></div>` : '';
 
-                if (isPastOrToday && totalMeds > 0) {
+                if (isPastOrToday) {
                     clickAction = `onclick="openHistoryDetail('${dateStr}')"`;
                     cursorClass = "cursor-pointer active:scale-95 shadow-sm hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-600";
                     
-                    if (takenCount === 0) {
+                    if (totalMeds === 0 || takenCount === 0) {
                         bgClass = "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400";
                     } else if (takenCount < totalMeds) {
                         bgClass = "bg-orange-100 dark:bg-orange-900/40 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 font-bold";
@@ -715,13 +808,15 @@
                 const isToday = (dateStr === todayStr);
                 const ringClass = isToday ? "ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-slate-800" : "";
 
-                container.innerHTML += `
+                html += `
                     <div class="relative aspect-square rounded-2xl border-2 flex items-center justify-center ${bgClass} ${ringClass} ${cursorClass} transition-all" ${clickAction}>
                         <span class="text-xl md:text-2xl">${i}</span>
                         ${noteIcon}
                     </div>
                 `;
             }
+
+            container.innerHTML = html;
         }
 
         // ================= 檢視所有備註 (照顧者功能) =================
@@ -731,16 +826,19 @@
             
             const sortedDates = Object.keys(dailyNotes).sort((a, b) => b.localeCompare(a));
             let hasNotes = false;
+            let notesHtml = '';
 
             sortedDates.forEach(dateStr => {
                 const note = dailyNotes[dateStr];
                 if (note && note.trim() !== '') {
                     hasNotes = true;
                     const [y, m, d] = dateStr.split('-');
-                    container.innerHTML += `
-                        <div class="bg-blue-50 dark:bg-slate-900/50 p-4 rounded-3xl border-2 border-blue-100 dark:border-slate-700 mb-3 cursor-pointer active:scale-95 transition-transform" onclick="closeAllNotesModal(); openHistoryDetail('${dateStr}')">
-                            <div class="font-black text-lg text-blue-600 dark:text-blue-400 mb-1"><i class="fa-regular fa-calendar-check mr-2"></i>${y}年${parseInt(m)}月${parseInt(d)}日</div>
-                            <div class="text-slate-700 dark:text-slate-200 font-bold text-lg whitespace-pre-wrap">${note}</div>
+                    const safeDate = escapeHtml(dateStr);
+                    const safeNote = escapeHtml(note);
+                    notesHtml += `
+                        <div class="bg-blue-50 dark:bg-slate-900/50 p-4 rounded-3xl border-2 border-blue-100 dark:border-slate-700 mb-3 cursor-pointer active:scale-95 transition-transform" onclick="closeAllNotesModal(); openHistoryDetail('${safeDate}')">
+                            <div class="font-black text-lg text-blue-600 dark:text-blue-400 mb-1"><i class="fa-regular fa-calendar-check mr-2"></i>${escapeHtml(y)}年${parseInt(m, 10)}月${parseInt(d, 10)}日</div>
+                            <div class="text-slate-700 dark:text-slate-200 font-bold text-lg whitespace-pre-wrap">${safeNote}</div>
                         </div>
                     `;
                 }
@@ -748,6 +846,8 @@
 
             if (!hasNotes) {
                 container.innerHTML = '<div class="flex flex-col items-center justify-center py-10 text-slate-400"><i class="fa-solid fa-folder-open text-5xl mb-4 opacity-50"></i><p class="font-bold text-xl">過去 60 日沒有任何備註</p></div>';
+            } else {
+                container.innerHTML = notesHtml;
             }
             
             document.getElementById('modal-all-notes').classList.replace('hidden', 'flex');
@@ -759,12 +859,11 @@
 
         function openHistoryDetail(dateStr) {
             const [y, m, d] = dateStr.split('-');
-            document.getElementById('history-detail-title').innerText = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+            document.getElementById('history-detail-title').innerText = `${y}年${parseInt(m, 10)}月${parseInt(d, 10)}日`;
             
             const noteInput = document.getElementById('history-note-input');
             noteInput.value = dailyNotes[dateStr] || '';
-            // 雙重事件確保必定儲存
-            noteInput.onchange = () => saveNote(dateStr, noteInput.value);
+            noteInput.oninput = () => scheduleNoteSave(dateStr, noteInput.value);
             noteInput.onblur = () => saveNote(dateStr, noteInput.value);
 
             const content = document.getElementById('history-detail-content');
@@ -780,20 +879,26 @@
             let takenHtml = '';
             let missedHtml = '';
 
-            const sortedMeds = [...medications].sort((a, b) => (a.time || '23:59').localeCompare(b.time || '23:59'));
+            const sortedMeds = getSortedMedications();
+            const safeDateStr = escapeHtml(dateStr);
 
             sortedMeds.forEach(med => {
                 const isTaken = log[med.id] === true;
-                const timeTag = med.time ? `<span class="text-sm bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-bold ml-2 shadow-sm inline-block"><i class="fa-regular fa-clock mr-1"></i>${med.time}</span>` : '';
-                const dosageTag = med.dosage ? `<p class="text-sm text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">${med.dosage}</p>` : '';
+                const safeId = escapeHtml(med.id);
+                const safeName = escapeHtml(med.name);
+                const safeDosage = escapeHtml(med.dosage);
+                const safeTime = escapeHtml(med.time);
+
+                const timeTag = safeTime ? `<span class="text-sm bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-bold ml-2 shadow-sm inline-block"><i class="fa-regular fa-clock mr-1"></i>${safeTime}</span>` : '';
+                const dosageTag = safeDosage ? `<p class="text-sm text-slate-500 dark:text-slate-400 font-bold truncate mt-0.5">${safeDosage}</p>` : '';
                 
                 const itemHtml = `
-                    <div onclick="toggleMedication('${med.id}', ${isTaken}, '${dateStr}')" class="cursor-pointer active:scale-95 transition-transform flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] border-2 border-slate-200 dark:border-slate-700 mb-3 shadow-sm">
+                    <div onclick="toggleMedication('${safeId}', ${isTaken}, '${safeDateStr}')" class="cursor-pointer active:scale-95 transition-transform flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] border-2 border-slate-200 dark:border-slate-700 mb-3 shadow-sm">
                         <div class="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center ${isTaken ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400'}">
                             <i class="fa-solid ${isTaken ? 'fa-check text-3xl' : 'fa-xmark text-3xl'}"></i>
                         </div>
                         <div class="flex-1 min-w-0 py-1">
-                            <h4 class="font-black text-2xl text-slate-800 dark:text-slate-200 truncate leading-tight">${med.name}</h4>
+                            <h4 class="font-black text-2xl text-slate-800 dark:text-slate-200 truncate leading-tight">${safeName}</h4>
                             ${dosageTag}
                         </div>
                         <div class="flex-shrink-0">${timeTag}</div>
@@ -804,13 +909,17 @@
                 else missedHtml += itemHtml;
             });
 
-            if (missedHtml) content.innerHTML += `<h4 class="text-red-500 dark:text-red-400 font-black text-2xl mb-4 mt-2 flex items-center gap-2"><i class="fa-solid fa-circle-exclamation"></i> 未服用</h4>${missedHtml}`;
-            if (takenHtml) content.innerHTML += `<h4 class="text-green-600 dark:text-green-500 font-black text-2xl mb-4 mt-8 flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> 已服用</h4>${takenHtml}`;
+            let detailHtml = '';
+            if (missedHtml) detailHtml += `<h4 class="text-red-500 dark:text-red-400 font-black text-2xl mb-4 mt-2 flex items-center gap-2"><i class="fa-solid fa-circle-exclamation"></i> 未服用</h4>${missedHtml}`;
+            if (takenHtml) detailHtml += `<h4 class="text-green-600 dark:text-green-500 font-black text-2xl mb-4 mt-8 flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> 已服用</h4>${takenHtml}`;
+            content.innerHTML = detailHtml;
 
             document.getElementById('modal-history-detail').classList.replace('hidden', 'flex');
         }
 
         function closeHistoryDetail() {
+            const noteInput = document.getElementById('history-note-input');
+            if (noteInput && noteInput.onblur) noteInput.onblur();
             document.getElementById('modal-history-detail').classList.replace('flex', 'hidden');
         }
 
@@ -826,57 +935,69 @@
             const iconContainer = document.getElementById('confirm-icon-container');
             
             if (type === 'success') {
-                btn.className = `w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-green-500`;
+                btn.className = "w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-green-500";
                 iconContainer.className = "w-24 h-24 bg-green-100 dark:bg-green-900/30 text-green-500 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl";
                 iconContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
             } else if (type === 'danger') {
-                btn.className = `w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-red-500`;
+                btn.className = "w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-red-500";
                 iconContainer.className = "w-24 h-24 bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl";
                 iconContainer.innerHTML = '<i class="fa-solid fa-trash"></i>';
             } else {
-                // warning 橙色
-                btn.className = `w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-orange-500`;
+                btn.className = "w-full text-white py-4 rounded-2xl font-black text-2xl shadow-lg active:opacity-80 transition-colors bg-orange-500";
                 iconContainer.className = "w-24 h-24 bg-orange-100 dark:bg-orange-900/30 text-orange-500 dark:text-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl";
                 iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
             }
 
             confirmActionCallback = onConfirm;
-            btn.onclick = () => { confirmActionCallback?.(); closeConfirmModal(); };
+            btn.onclick = () => {
+                const cb = confirmActionCallback;
+                closeConfirmModal();
+                if (cb) cb();
+            };
             modal.classList.replace('hidden', 'flex');
         }
 
-        function closeConfirmModal() { document.getElementById('modal-confirm').classList.replace('flex', 'hidden'); }
+        function closeConfirmModal() {
+            confirmActionCallback = null;
+            document.getElementById('modal-confirm').classList.replace('flex', 'hidden');
+        }
 
         // ====== 核心打卡功能 ======
         async function toggleMedication(id, currentState, targetDate) {
-            if (!dailyLogs[targetDate]) dailyLogs[targetDate] = {};
             const isToday = (targetDate === getTodayString());
+
+            const applyToggle = async (newState) => {
+                if (!dailyLogs[targetDate]) dailyLogs[targetDate] = {};
+                if (newState) {
+                    dailyLogs[targetDate][id] = true;
+                } else {
+                    delete dailyLogs[targetDate][id];
+                    if (Object.keys(dailyLogs[targetDate]).length === 0) {
+                        delete dailyLogs[targetDate];
+                    }
+                }
+                await saveData();
+                if (isToday) renderTodayView();
+                renderHistoryView();
+                if (!document.getElementById('modal-history-detail').classList.contains('hidden')) {
+                    openHistoryDetail(targetDate);
+                }
+            };
 
             if (currentState) {
                 // 取消打卡 (任何日子都彈出橙色警告確認)
                 showConfirmModal("warning", "確定取消打卡？", "將取消這項藥物的「已服用」紀錄。", "確定取消", async () => {
-                    dailyLogs[targetDate][id] = false;
-                    await saveData();
-                    if (isToday) renderTodayView();
-                    renderHistoryView();
-                    if (!document.getElementById('modal-history-detail').classList.contains('hidden')) openHistoryDetail(targetDate);
+                    await applyToggle(false);
                 });
             } else {
                 if (!isToday) {
                     // 歷史紀錄「補打卡」 (彈出綠色勾勾確認)
                     showConfirmModal("success", "確定補回紀錄？", "將這項藥物標記為「已服用」。", "確定補回", async () => {
-                        dailyLogs[targetDate][id] = true;
-                        await saveData();
-                        renderHistoryView();
-                        if (!document.getElementById('modal-history-detail').classList.contains('hidden')) openHistoryDetail(targetDate);
+                        await applyToggle(true);
                     });
                 } else {
                     // 今天日常打卡 (一秒過，不彈窗，附帶震動)
-                    dailyLogs[targetDate][id] = true;
-                    await saveData();
-                    renderTodayView();
-                    renderHistoryView();
-                    if (!document.getElementById('modal-history-detail').classList.contains('hidden')) openHistoryDetail(targetDate);
+                    await applyToggle(true);
                     if (navigator.vibrate) navigator.vibrate([50, 50]); 
                 }
             }
@@ -885,7 +1006,7 @@
         function updateProgress(completed, total) {
             const textEl = document.getElementById('progress-text');
             textEl.innerText = `完成 ${completed}/${total}`;
-            if(completed === total && total > 0) {
+            if (completed === total && total > 0) {
                 textEl.className = 'px-5 py-2.5 rounded-full text-xl font-black shadow-sm transition-colors bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400';
             } else {
                 textEl.className = 'px-5 py-2.5 rounded-full text-xl font-black shadow-sm transition-colors bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300';
@@ -897,7 +1018,6 @@
             const container = document.getElementById('manageList');
             container.innerHTML = '';
 
-            // 空載時加入 min-h-[50vh] 撐開版面確保可捲動
             if (medications.length === 0) {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 dark:text-slate-600">
@@ -906,26 +1026,31 @@
                 return;
             }
 
-            const sortedMeds = [...medications].sort((a, b) => (a.time || '23:59').localeCompare(b.time || '23:59'));
+            const sortedMeds = getSortedMedications();
 
             sortedMeds.forEach(med => {
+                const safeId = escapeHtml(med.id);
+                const safeName = escapeHtml(med.name);
+                const safeDosage = escapeHtml(med.dosage);
+                const safeTime = escapeHtml(med.time);
+
                 const thumbnail = (med.images && med.images.length > 0) ? med.images[0] : null;
-                const timeText = med.time ? `<span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-block mt-2"><i class="fa-regular fa-clock mr-1"></i>${med.time}</span>` : '';
+                const timeText = safeTime ? `<span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm inline-block mt-2"><i class="fa-regular fa-clock mr-1"></i>${safeTime}</span>` : '';
 
                 const card = document.createElement('div');
                 card.className = "bg-white dark:bg-slate-800 p-4 rounded-[2rem] shadow-sm border-2 border-slate-200 dark:border-slate-700 flex items-center gap-4 mb-4";
                 card.innerHTML = `
                     <div class="w-24 h-24 md:w-28 md:h-28 rounded-2xl flex-shrink-0 overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-center cursor-pointer">
-                        ${thumbnail ? `<img src="${thumbnail}" class="w-full h-full object-contain p-1.5" onclick="openImageViewer('${med.id}')">` : `<i class="fa-solid fa-pills text-4xl text-slate-300 dark:text-slate-600"></i>`}
+                        ${thumbnail ? `<img src="${thumbnail}" alt="${safeName}" class="w-full h-full object-contain p-1.5" onclick="openImageViewer('${safeId}')">` : `<i class="fa-solid fa-pills text-4xl text-slate-300 dark:text-slate-600"></i>`}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-black text-2xl text-slate-800 dark:text-slate-200 truncate">${med.name}</h3>
-                        ${med.dosage ? `<p class="text-sm text-slate-500 dark:text-slate-400 truncate font-bold">${med.dosage}</p>` : ''}
+                        <h3 class="font-black text-2xl text-slate-800 dark:text-slate-200 truncate">${safeName}</h3>
+                        ${safeDosage ? `<p class="text-sm text-slate-500 dark:text-slate-400 truncate font-bold">${safeDosage}</p>` : ''}
                         ${timeText}
                     </div>
                     <div class="flex flex-col gap-3">
-                        <button onclick="editMedication('${med.id}')" class="w-12 h-12 md:w-14 md:h-14 bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xl md:text-2xl active:scale-95 border border-slate-200 dark:border-slate-600"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="confirmDeleteMedication('${med.id}')" class="w-12 h-12 md:w-14 md:h-14 bg-slate-100 dark:bg-slate-700 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center text-xl md:text-2xl active:scale-95 border border-slate-200 dark:border-slate-600"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="editMedication('${safeId}')" aria-label="編輯 ${safeName}" class="w-12 h-12 md:w-14 md:h-14 bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xl md:text-2xl active:scale-95 border border-slate-200 dark:border-slate-600"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="confirmDeleteMedication('${safeId}')" aria-label="刪除 ${safeName}" class="w-12 h-12 md:w-14 md:h-14 bg-slate-100 dark:bg-slate-700 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center text-xl md:text-2xl active:scale-95 border border-slate-200 dark:border-slate-600"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -934,36 +1059,39 @@
 
         // ====== 完美備份（支援 iOS 原生分享選單與自訂資料夾） ======
         async function exportData() {
-            if(medications.length === 0) return showToast("沒有資料可匯出", "error");
+            const hasLogs = Object.keys(dailyLogs).length > 0;
+            const hasNotes = Object.keys(dailyNotes).length > 0;
+            if (medications.length === 0 && !hasLogs && !hasNotes) {
+                return showToast("沒有資料可匯出", "error");
+            }
             
-            const dataStr = JSON.stringify({ medications, dailyLogs, dailyNotes });
+            const dataStr = JSON.stringify({ medications, dailyLogs, dailyNotes }, null, 2);
             const fileName = `mom_pills_backup_${getTodayString()}.json`;
             
-            if (navigator.canShare) {
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const file = new File([blob], fileName, { type: 'application/json' });
-                
-                if (navigator.canShare({ files: [file] })) {
-                    try {
-                        // 移除了多餘的 text 提示，確保 iOS 只單純匯出一個 json 檔案
-                        await navigator.share({
-                            files: [file]
-                        });
+            if (navigator.canShare && typeof File === 'function') {
+                try {
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const file = new File([blob], fileName, { type: 'application/json' });
+                    
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file] });
                         return showToast("備份已導出！");
-                    } catch (err) {
-                        console.log("分享取消或失敗", err);
-                        return;
                     }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.log("分享選單未完成，改用直接下載:", err);
                 }
             }
 
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.setAttribute('href', dataUri);
+            link.setAttribute('href', url);
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             showToast("備份已下載！");
         }
 
@@ -974,11 +1102,15 @@
             reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.medications && data.dailyLogs) {
+                    if (Array.isArray(data.medications) && data.dailyLogs && typeof data.dailyLogs === 'object') {
                         medications = data.medications;
                         dailyLogs = data.dailyLogs;
-                        if (data.dailyNotes) dailyNotes = data.dailyNotes;
+                        dailyNotes = (data.dailyNotes && typeof data.dailyNotes === 'object') ? data.dailyNotes : {};
+                        await purgeOldRecords();
                         await saveData();
+                        const now = new Date();
+                        displayCalYear = now.getFullYear();
+                        displayCalMonth = now.getMonth();
                         renderManageView();
                         renderTodayView();
                         renderHistoryView();
@@ -998,21 +1130,37 @@
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (currentEditingImages.length >= 8) return showToast("最多上傳 8 張！", "error");
+            if (currentEditingImages.length >= 8) {
+                event.target.value = '';
+                return showToast("最多上傳 8 張！", "error");
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height;
+                    let width = img.width;
+                    let height = img.height;
                     // 縮圖處理節省空間
-                    if (width > height && width > 800) { height *= 800 / width; width = 800; } 
-                    else if (height > 800) { width *= 800 / height; height = 800; }
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    if (width > height && width > 800) {
+                        height = Math.round(height * (800 / width));
+                        width = 800;
+                    } else if (height > 800) {
+                        width = Math.round(width * (800 / height));
+                        height = 800;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
                     currentEditingImages.push(canvas.toDataURL('image/jpeg', 0.7));
+                    canvas.width = 0;
+                    canvas.height = 0;
                     renderImagePreviews();
+                };
+                img.onerror = function() {
+                    showToast("圖片載入失敗", "error");
                 };
                 img.src = e.target.result;
             };
@@ -1020,27 +1168,35 @@
             event.target.value = '';
         }
 
+        function removeEditingImage(index) {
+            currentEditingImages.splice(index, 1);
+            renderImagePreviews();
+        }
+
         function renderImagePreviews() {
             const container = document.getElementById('imagePreviewContainer');
             container.innerHTML = '';
             
-            // 單一上傳按鈕
-            const uploadBtn = `
-                <label class="w-36 h-36 flex-shrink-0 border-4 border-dashed border-blue-200 dark:border-slate-600 bg-blue-50 dark:bg-slate-700/50 rounded-3xl flex flex-col items-center justify-center text-blue-500 dark:text-slate-400 cursor-pointer active:bg-blue-100 dark:active:bg-slate-600 transition shadow-sm">
-                    <i class="fa-solid fa-camera text-4xl mb-2"></i>
-                    <span class="text-sm font-black">加入照片</span>
-                    <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                </label>`;
-
+            let html = '';
             currentEditingImages.forEach((imgSrc, index) => {
-                container.innerHTML += `
+                html += `
                     <div class="w-36 h-36 flex-shrink-0 relative rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-900">
-                        <img src="${imgSrc}" class="w-full h-full object-contain p-1.5">
-                        <button onclick="currentEditingImages.splice(${index}, 1); renderImagePreviews();" class="absolute top-2 right-2 w-10 h-10 bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-sm text-xl"><i class="fa-solid fa-xmark"></i></button>
+                        <img src="${imgSrc}" alt="預覽照片 ${index + 1}" class="w-full h-full object-contain p-1.5">
+                        <button type="button" onclick="removeEditingImage(${index})" aria-label="移除照片" class="absolute top-2 right-2 w-10 h-10 bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-sm text-xl"><i class="fa-solid fa-xmark"></i></button>
                     </div>`;
             });
+
             // 只要少於 8 張，就顯示上傳按鈕
-            if (currentEditingImages.length < 8) container.innerHTML += uploadBtn;
+            if (currentEditingImages.length < 8) {
+                html += `
+                    <label class="w-36 h-36 flex-shrink-0 border-4 border-dashed border-blue-200 dark:border-slate-600 bg-blue-50 dark:bg-slate-700/50 rounded-3xl flex flex-col items-center justify-center text-blue-500 dark:text-slate-400 cursor-pointer active:bg-blue-100 dark:active:bg-slate-600 transition shadow-sm">
+                        <i class="fa-solid fa-camera text-4xl mb-2"></i>
+                        <span class="text-sm font-black">加入照片</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                    </label>`;
+            }
+
+            container.innerHTML = html;
         }
 
         // ================= 新增/編輯藥物表單 =================
@@ -1092,7 +1248,14 @@
                 images: [...currentEditingImages] 
             };
             
-            id ? medications[medications.findIndex(m => m.id === id)] = medData : medications.push(medData);
+            if (id) {
+                const idx = medications.findIndex(m => m.id === id);
+                if (idx !== -1) medications[idx] = medData;
+                else medications.push(medData);
+            } else {
+                medications.push(medData);
+            }
+
             await saveData();
             closeAddModal();
             renderManageView();
@@ -1104,7 +1267,15 @@
         function confirmDeleteMedication(id) {
             showConfirmModal("danger", "確定刪除？", "這項藥物將被永久移除。", "確定刪除", async () => {
                 medications = medications.filter(m => m.id !== id);
-                if (dailyLogs[getTodayString()]) delete dailyLogs[getTodayString()][id];
+                // 同步清理所有歷史日期中該藥物的打卡紀錄，避免歷史統計失準
+                for (const dateStr of Object.keys(dailyLogs)) {
+                    if (dailyLogs[dateStr] && id in dailyLogs[dateStr]) {
+                        delete dailyLogs[dateStr][id];
+                        if (Object.keys(dailyLogs[dateStr]).length === 0) {
+                            delete dailyLogs[dateStr];
+                        }
+                    }
+                }
                 await saveData();
                 renderManageView();
                 renderTodayView();
@@ -1117,18 +1288,22 @@
             const med = medications.find(m => m.id === id);
             if (!med || !med.images?.length) return;
             const container = document.getElementById('viewer-img-container');
-            container.innerHTML = `<h3 class="text-slate-200 text-4xl md:text-5xl font-black mb-2 mt-4 text-center w-full px-4 shrink-0">${med.name}</h3>`;
+            const safeName = escapeHtml(med.name);
+            let html = `<h3 class="text-slate-200 text-4xl md:text-5xl font-black mb-2 mt-4 text-center w-full px-4 shrink-0">${safeName}</h3>`;
             med.images.forEach((src, i) => {
-                container.innerHTML += `
+                html += `
                     <div class="w-full max-w-lg bg-slate-800 p-4 rounded-3xl shadow-2xl border-2 border-slate-700 shrink-0">
                         <div class="text-slate-300 text-lg font-bold mb-3 text-center bg-slate-900 rounded-full py-1 w-max px-6 mx-auto">照片 ${i + 1} / ${med.images.length}</div>
-                        <img src="${src}" class="w-full bg-white dark:bg-black rounded-2xl p-2 object-contain max-h-[60vh]">
+                        <img src="${src}" alt="${safeName} 照片 ${i + 1}" class="w-full bg-white dark:bg-black rounded-2xl p-2 object-contain max-h-[60vh]">
                     </div>`;
             });
+            container.innerHTML = html;
             document.getElementById('modal-image-viewer').classList.replace('hidden', 'flex');
         }
 
-        function closeImageViewer() { document.getElementById('modal-image-viewer').classList.replace('flex', 'hidden'); }
+        function closeImageViewer() {
+            document.getElementById('modal-image-viewer').classList.replace('flex', 'hidden');
+        }
 
         window.onload = initApp;
     </script>

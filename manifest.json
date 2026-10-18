@@ -1,16 +1,27 @@
 {
-"name": "食藥未",
-"short_name": "食藥未",
-"start_url": ".",
-"display": "standalone",
-"background_color": "#f8fafc",
-"theme_color": "#f8fafc",
-"icons": [
-{
-"src": "icon-192.png",
-"sizes": "192x192",
-"type": "image/png",
-"purpose": "any maskable"
-}
-]
+  "name": "食藥未",
+  "short_name": "食藥未",
+  "description": "長者及照顧者友善的每日服藥打卡、相片核對與健康備註離線工具",
+  "lang": "zh-HK",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
