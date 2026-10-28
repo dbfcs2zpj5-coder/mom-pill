@@ -1,15 +1,15 @@
 {
-  "name": "食藥未",
+  "name": "食藥未 — 媽咪服藥打卡",
   "short_name": "食藥未",
-  "description": "長者及照顧者友善的每日服藥打卡、相片核對與健康備註離線工具",
+  "description": "長者及照顧者友善的每日多時段服藥打卡、相片放大核對與健康備註離線工具",
   "lang": "zh-HK",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f8fafc",
-  "theme_color": "#f8fafc",
+  "background_color": "#f3e2c5",
+  "theme_color": "#f3e2c5",
   "icons": [
     {
       "src": "icon-192.png",

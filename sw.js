@@ -1,6 +1,6 @@
-const CACHE_NAME = 'mom-pills-cache-v6';
+const CACHE_NAME = 'mom-pills-cache-v7';
 
-// 這些是 App 需要下載的「核心離線必需品」
+// 核心離線必需品
 const urlsToCache = [
   './',
   './index.html',
@@ -12,7 +12,7 @@ const urlsToCache = [
   'https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700;900&display=swap'
 ];
 
-// 1. 安裝階段：防彈級別的下載機制，完成後才執行 skipWaiting
+// 1. 安裝階段：下載核心檔案完成後執行 skipWaiting
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -42,11 +42,35 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 3. 攔截階段：僅處理 HTTP/HTTPS GET 請求，並在斷網時提供安全降級回應
+// 3. 攔截階段：對 HTML 導航採用 Network-First（有網即攞最新版並更新快取，斷網即讀本地快取），對靜態資源採用 Cache-First
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const reqUrl = event.request.url;
   if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://')) return;
+
+  const isHtmlNavigation =
+    event.request.mode === 'navigate' ||
+    reqUrl.endsWith('/index.html') ||
+    reqUrl.endsWith('/manifest.json');
+
+  if (isHtmlNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache).catch(() => {});
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then(cached => cached || caches.match('./index.html'));
+        })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
@@ -69,10 +93,6 @@ self.addEventListener('fetch', event => {
           return networkResponse;
         })
         .catch(() => {
-          // 若為頁面導航請求，離線時退回主頁面
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
           return new Response('', {
             status: 503,
             statusText: 'Offline'
